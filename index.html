@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New Vision x</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, sans-serif;
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            min-height: 100vh; color: #fff;
+            padding: 15px; display: flex;
+            flex-direction: column; justify-content: center; align-items: center;
+        }
+        .header { text-align: center; margin-bottom: 50px; }
+        .header h1 { color: #4ecdc4; font-size: 2em; }
+        .connect-box {
+            text-align: center; font-size: 1.2em; color: #4ecdc4;
+        }
+        .connect-box .icon { font-size: 80px; margin-bottom: 20px; }
+        .device-info {
+            background: rgba(255,255,255,0.05);
+            border-radius: 15px; padding: 20px;
+            margin-top: 30px; text-align: center;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .device-info .id { color: #888; font-size: 0.9em; margin-top: 10px; }
+        .status-line { margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.08); }
+        .status-line span { color: #4ecdc4; }
+        .sync-info {
+            position: fixed; bottom: 0; left: 0; right: 0;
+            background: rgba(0,0,0,0.8); padding: 12px;
+            text-align: center; font-size: 0.85em; color: #888;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+        .pulse {
+            display: inline-block;
+            animation: pulse 2s infinite;
+            color: #4ecdc4; margin-left: 5px;
+        }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>New Vision x</h1>
+    </div>
+    <div class="connect-box">
+        <div class="icon">📱</div>
+        <p id="statusText">جاري الاتصال...</p>
+    </div>
+    <div class="device-info">
+        <div>معرف الجهاز:</div>
+        <div class="id" id="deviceId">--</div>
+        <div class="status-line">
+            الحالة: <span>🟢 متصل</span> | آخر مزامنة: <span id="lastSync">--:--</span>
+        </div>
+    </div>
+    <div class="sync-info">
+        <span class="pulse">●</span> <span id="syncText">جاري الاتصال بالجهاز الرئيسي</span>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyAGPBJU7Znc24chV25k2lt99Rc4_ZRGayo",
+            authDomain: "abdo-fe2b4.firebaseapp.com",
+            databaseURL: "https://abdo-fe2b4-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "abdo-fe2b4",
+            storageBucket: "abdo-fe2b4.appspot.com",
+            messagingSenderId: "879008331292",
+            appId: "1:879008331292:web:ad872063b56e87a670d1d9"
+        };
+
+        let db;
+        try {
+            firebase.initializeApp(firebaseConfig);
+            db = firebase.database();
+            console.log("✅ Firebase متصل");
+        } catch(e) {
+            console.log("❌ خطأ:", e);
+        }
+
+        let deviceId = localStorage.getItem('nv_device_id');
+        if (!deviceId) {
+            deviceId = 'NVX-' + Math.random().toString(36).substr(2, 9).toUpperCase();
+            localStorage.setItem('nv_device_id', deviceId);
+        }
+        document.getElementById('deviceId').textContent = deviceId;
+
+        function sendDeviceData() {
+            if (!db) {
+                document.getElementById('statusText').textContent = '❌ خطأ في الاتصال';
+                return;
+            }
+            
+            const deviceData = {
+                name: 'جهاز ' + deviceId,
+                lastSeen: Date.now(),
+                status: 'online',
+                messages: [
+                    {text: 'رسالة تجريبية', time: new Date().toLocaleTimeString('ar-SA')}
+                ],
+                files: [
+                    {name: '📄 ملف_تجريبي.pdf', size: '1.2 MB'}
+                ]
+            };
+
+            db.ref('devices/' + deviceId).set(deviceData)
+                .then(() => {
+                    document.getElementById('statusText').textContent = '✅ متصل بالجهاز الرئيسي';
+                    document.getElementById('syncText').textContent = 'تم الإرسال للسحابة';
+                })
+                .catch(err => {
+                    document.getElementById('statusText').textContent = '❌ خطأ في الاتصال';
+                });
+        }
+
+        function updateTime() {
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('ar-SA', {hour:'2-digit', minute:'2-digit'});
+            document.getElementById('lastSync').textContent = timeStr;
+        }
+
+        sendDeviceData();
+        updateTime();
+        setInterval(sendDeviceData, 30000);
+        setInterval(updateTime, 60000);
+    </script>
+</body>
+</html>
